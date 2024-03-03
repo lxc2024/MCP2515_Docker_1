@@ -7,6 +7,6 @@ How to use:
    sudo /sbin/ip link set can0 up type can bitrate 500000 loopback on
 3. Open new terminal listen can message:
    candump can0 -n1
-5. Open other terminal send can message:
+4. Open other terminal send can message:
    docker run --rm --privileged -v /dev:/dev --network host thainh5/mcp2515:latest
    
