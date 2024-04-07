@@ -26,7 +26,7 @@ void signalHandler(int signal) {
         exitRequested = 1;
         cv.notify_all(); // Notify all threads waiting on the condition variable
     }
-}
+}	
 
 // Function to send CAN messages periodically
 void sendMessages(int sock) {
@@ -84,15 +84,20 @@ void receiveMessages(int sock) {
         }
 
         if (recvBytes > 0) {
-            std::cout << "Received " << recvBytes << " bytes" << std::endl;
-            std::cout << "CAN ID: 0x" << std::hex << recvFrame.can_id << std::dec << std::endl;
-            std::cout << "Data: ";
-            for (int i = 0; i < recvFrame.can_dlc; ++i) {
-                std::cout << std::hex << static_cast<int>(recvFrame.data[i]) << " ";
+            if (recvFrame.can_id == 0x500 || recvFrame.can_id == 0x1) {
+                //Ignore IDs
+            } else {
+                std::cout << "Received " << recvBytes << " bytes" << std::endl;
+                std::cout << "CAN ID: 0x" << std::hex << recvFrame.can_id << std::dec << std::endl;
+                std::cout << "Data: ";
+                for (int i = 0; i < recvFrame.can_dlc; ++i) {
+                    std::cout << std::hex << static_cast<int>(recvFrame.data[i]) << " ";
+                }
+                std::cout << std::dec << std::endl;
             }
-            std::cout << std::dec << std::endl;
 			
 			if (recvFrame.can_id == 0x111) {
+                struct can_frame sendFrame;
 				sendFrame.can_id = 0x601;
 				sendFrame.can_dlc = 8; // Number of data bytes
 				sendFrame.data[0] = 0x02;
@@ -111,54 +116,65 @@ void receiveMessages(int sock) {
 					return;
 				}
 
-				std::cout << "Sent Diag Message" << std::endl;
+				std::cout << "Requested DefaultSession service" << std::endl;
 			}
 
         }
     }
 }
 
-// Function to send CAN message when 'q' is pressed
+// Function to send CAN message when 'c' is pressed
 void sendOnKeyPress(int sock) {
-    // Set terminal to non-blocking mode
-    struct termios oldt, newt;
-    tcgetattr(STDIN_FILENO, &oldt);
-    newt = oldt;
-    newt.c_lflag &= ~(ICANON | ECHO);
-    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
 
     char input;
+    struct can_frame sendFrame;
+    ssize_t sendBytes;
+    
+    std::cout << "************* Select diagnostic message *************" << std::endl;
+    std::cout << " 1) Press 'a' to request ReadDataByID service" << std::endl;
+    std::cout << " 2) Press 'b' to request WriteDataByID service" << std::endl;
+    std::cout << " 3) Press 'c' to request DefaultSession service" << std::endl;
+    
     while (!exitRequested) {
+        std::cout << "Enter your choices: " << std::endl;
+        std::cin >> input;
         // Check for user input
-        int result = read(STDIN_FILENO, &input, 1);
-        if (result > 0 && input == 'q') {
-            // Send a CAN frame
-            sendFrame.can_id = 0x601;
-			sendFrame.can_dlc = 8; // Number of data bytes
-			sendFrame.data[0] = 0x02;
-			sendFrame.data[1] = 0x10;
-			sendFrame.data[2] = 0x01;
-			sendFrame.data[3] = 0x00;
-			sendFrame.data[4] = 0x00;
-			sendFrame.data[5] = 0x00;
-			sendFrame.data[6] = 0x00;
-			sendFrame.data[7] = 0x00;
+        switch(input) {
+            case 'a':
+                std::cout << "ReadDataByID service does not support now..." << std::endl;
+                // Your code for 'a' goes here
+                break;
+            case 'b':
+                std::cout << "WriteDataByID service does not support now..." << std::endl;
+                // Your code for 'b' goes here
+                break;
+            case 'c':
+                // Send a CAN frame
+                sendFrame.can_id = 0x601;
+                sendFrame.can_dlc = 8; // Number of data bytes
+                sendFrame.data[0] = 0x02;
+                sendFrame.data[1] = 0x10;
+                sendFrame.data[2] = 0x01;
+                sendFrame.data[3] = 0x00;
+                sendFrame.data[4] = 0x00;
+                sendFrame.data[5] = 0x00;
+                sendFrame.data[6] = 0x00;
+                sendFrame.data[7] = 0x00;
 
-            ssize_t sendBytes = write(sock, &sendFrame, sizeof(struct can_frame));
-            if (sendBytes == -1) {
-                perror("write");
-                close(sock);
-                return;
-            }
-
-            std::cout << "Sent " << sendBytes << " bytes" << std::endl;
+                sendBytes= write(sock, &sendFrame, sizeof(struct can_frame));
+                if (sendBytes == -1) {
+                    perror("write");
+                    close(sock);
+                    return;
+                }
+                std::cout << "Requested DefaultSession service..." << std::endl;
+                // Your code for 'c' goes here
+                break;
+            default:
+                std::cout << "Invalid input, please input again" << std::endl;
+                break;
         }
-        // Sleep for a short duration to prevent high CPU usage
-        usleep(10000);
     }
-
-    // Restore terminal settings
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
 }
 
 int main() {
