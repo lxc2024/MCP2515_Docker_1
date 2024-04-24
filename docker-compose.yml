@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+  can_usb:
+    image: thainh5/can_usb
+    privileged: true
+    network_mode: "host"
+
+  my_docker_ubuntu:
+    image: my_docker_ubuntu
+    privileged: true
+    network_mode: "host"
