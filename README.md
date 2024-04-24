@@ -5,19 +5,17 @@ How to use:
    docker pull thainh5/mcp2515
 2. Enable can with baudrate and loopback mode:
    sudo /sbin/ip link set can0 up type can bitrate 500000 loopback on
-3. Open new terminal listen can message:
+   OR
+   sudo ip link set can0 up type can bitrate 500000
+4. Open new terminal listen can message:
    candump can0 -n1
-4. Open other terminal send can message:
+5. Open other terminal send can message:
    docker run --rm --privileged -v /dev:/dev --network host thainh5/mcp2515:latest
 
 # USB CAN
-1. Find USB interface:
-   ls /dev/ttyUSB*
-2. Attach slcan (suppose USB0 is available):
-   sudo slcan_attach /dev/ttyUSB0
-3. Create a CAN network interface from a serial line device
-   sudo slcand ttyUSB0 slcan0
-4. Link up can network
-   sudo ip link set slcan0 up
-5. Use similar code in MCP2515_Docker_1 with replacement can0 -> slcan0
+1. Run container multi-platorm:
+   docker run -it --rm --privileged -v /dev:/dev --network host thainh5/can_usb bash
+2. Run multi container with docker-compose
+   docker-compose run --rm --service-ports my_docker_ubuntu bash
+   docker-compose run --rm --service-ports can_usb bash
    
